@@ -29,11 +29,31 @@ Best validation ROC AUC: 0.954 (epoch 5).
 
 Training ran on a single NVIDIA GPU on Purdue's Scholar cluster and checkpoints every epoch, so interrupted runs resume automatically.
 
-## Usage
+## Deployment
+
+**REST API (FastAPI + Docker).** The `app/` package serves the model with OpenCV face detection, the same preprocessing used in evaluation, and optional Grad-CAM output.
 
 ```bash
-git clone https://github.com/adichaudhary/deepsentinel.git
-cd deepsentinel
+docker build -t deepsentinel .
+docker run -p 8000:8000 deepsentinel
+curl -F "file=@face.jpg" "http://localhost:8000/predict?heatmap=true"
+```
+
+| Endpoint | Description |
+|---|---|
+| `GET /health` | Liveness and model status |
+| `POST /predict` | Returns `label`, `p_fake`, the detected face box, and an optional base64 Grad-CAM PNG |
+| `GET /docs` | Interactive OpenAPI documentation |
+
+**AWS ECS (Fargate).** `deploy/deploy.sh` builds the image, pushes it to ECR, registers the task definition, and runs it as a public Fargate service. `deploy/teardown.sh` removes it.
+
+**Hugging Face Spaces.** `space/` contains a Gradio demo that returns the prediction alongside a Grad-CAM overlay.
+
+Model weights are hosted on the Hugging Face Hub and fetched at build time.
+
+## Training
+
+```bash
 pip install -r requirements.txt
 jupyter lab deepsentinel.ipynb
 ```
@@ -44,8 +64,18 @@ Set `DEEPSENTINEL_ROOT` to choose where checkpoints and outputs are written. Sub
 
 ```
 deepsentinel/
-├── deepsentinel.ipynb   # End-to-end pipeline: data, training, evaluation, Grad-CAM, robustness check
-├── requirements.txt
+├── deepsentinel.ipynb        # Training, evaluation, Grad-CAM, robustness check
+├── app/
+│   ├── inference.py          # Face detection, preprocessing, prediction, Grad-CAM
+│   └── main.py               # FastAPI service
+├── space/                    # Hugging Face Spaces Gradio demo
+├── deploy/
+│   ├── ecs-task-definition.json
+│   ├── deploy.sh             # Build, push to ECR, deploy to ECS Fargate
+│   └── teardown.sh
+├── Dockerfile
+├── requirements.txt          # Training
+├── requirements-api.txt      # Inference
 └── assets/
     └── gradcam.png
 ```

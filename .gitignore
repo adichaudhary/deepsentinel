@@ -1,0 +1,9 @@
+*.pt
+*.pth
+checkpoints/
+wandb/
+hf_cache/
+.ipynb_checkpoints/
+__pycache__/
+.env
+.venv/
