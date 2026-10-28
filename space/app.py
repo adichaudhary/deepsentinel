@@ -1,12 +1,14 @@
 """DeepSentinel Gradio demo for Hugging Face Spaces."""
 
 import gradio as gr
+import spaces
 
 from inference import DeepSentinel
 
-detector = DeepSentinel()
+detector = DeepSentinel(device="cuda")
 
 
+@spaces.GPU
 def analyze(image):
     if image is None:
         return None, None, "Upload an image to begin."
